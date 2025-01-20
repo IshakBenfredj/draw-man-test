@@ -21,3 +21,20 @@ export const calculateAge = (birthday: Date, inMonths: boolean): number => {
     return years;
   }
 };
+
+
+export function getLocalizedFullDate(date?: Date): string {
+  var dateToFormat;
+  if (date) {
+    dateToFormat = new Date(date)
+  } else {
+    dateToFormat = new Date()
+  }
+
+  const dateFormat = new Intl.DateTimeFormat("ar-DZ", {
+    dateStyle: "full",
+    timeZone: "Africa/Algiers",
+  }).format(dateToFormat);
+
+  return dateFormat;
+}

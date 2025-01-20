@@ -30,7 +30,6 @@ export function PatientsProvider({ children }: { children: ReactNode }) {
       const data: Patient[] = await response.json();
       setPatients(data);
     } catch (error) {
-      console.error("خطأ أثناء تحميل بيانات المرضى:", error);
       alert("حدث خطأ أثناء تحميل المرضى، تأكد من اتصالك بالإنترنت أو حاول لاحقًا.");
     } finally {
       setLoading(false);

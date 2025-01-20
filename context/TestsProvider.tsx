@@ -22,7 +22,6 @@ export function TestsProvider({ children }: { children: ReactNode }) {
       const data: Test[] = await response.json();
       setTests(data);
     } catch (error) {
-      console.error('خطأ أثناء تحميل بيانات الفحوصات:', error);
       alert('حدث خطأ أثناء تحميل الفحوصات، تأكد من اتصالك بالإنترنت أو حاول لاحقًا.');
     } finally {
       setLoading(false);

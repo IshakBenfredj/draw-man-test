@@ -11,5 +11,5 @@ export interface Test {
   patient: string;
   result: number;
   date: Date;
-  images : string
+  image : string
 }
