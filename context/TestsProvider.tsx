@@ -18,7 +18,7 @@ export function TestsProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const response = await fetch(get_test_api);
-      if (!response.ok) throw new Error('تعذر جلب بيانات الفحوصات، يرجى المحاولة لاحقًا.');
+      if (!response.ok) return console.log('تعذر جلب بيانات الفحوصات، يرجى المحاولة لاحقًا.');
       const data: Test[] = await response.json();
       setTests(data);
     } catch (error) {

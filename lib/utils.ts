@@ -1,5 +1,6 @@
 import { Alert } from "react-native";
 import { add_test_api, update_test_api } from "./api";
+import { rawScoreToMentalAge } from "./test";
 
 export const calculateAge = (birthday: Date, inMonths: boolean): number => {
   const today = new Date();
@@ -87,4 +88,16 @@ export const handleUpdate = async (formData: FormData) => {
     Alert.alert("خطأ", "حدث خطأ ما أثناء الحفظ , الرجاء المحاولة مجددا");
     return false;
   }
+};
+
+
+export const getClosestMentalAge = (score: number): number => {
+  const keys = Object.keys(rawScoreToMentalAge)
+    .map(Number)
+    .sort((a, b) => a - b); // Sort keys numerically
+
+  const closestKey =
+    keys.find((key) => key >= score) ?? keys[keys.length - 1]; // Get closest higher or last element
+
+  return rawScoreToMentalAge[closestKey as keyof typeof rawScoreToMentalAge];
 };

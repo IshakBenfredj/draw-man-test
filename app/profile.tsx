@@ -14,13 +14,20 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import HeadPage from "@/components/HeadPage";
-import type { Patient, Test } from "@/types";
+import type { Patient, Test, TestResults } from "@/types";
 import * as ImagePicker from "expo-image-picker";
 import { useTests } from "@/context/TestsProvider";
-import { getLocalizedFullDate, handleInsert, handleUpdate } from "@/lib/utils";
+import {
+  calculateAge,
+  getClosestMentalAge,
+  getLocalizedFullDate,
+  handleInsert,
+  handleUpdate,
+} from "@/lib/utils";
 import ImageViewer from "react-native-image-zoom-viewer";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
+import { explanations } from "@/lib/test";
 
 const CLOUDINARY_UPLOAD_PRESET = "ml_default"; // Replace with your Cloudinary preset
 const CLOUDINARY_CLOUD_NAME = "dbticypnb";
@@ -31,9 +38,11 @@ export default function PatientDetails() {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingSaveImg, setLoadingSaveImg] = useState<boolean>(false);
+  const [loadingDR, setLoadingDR] = useState<boolean>(false);
   const [test, setTest] = useState<Test | undefined>(undefined);
   const [capturedImage, setCapturedImage] = useState<string>("");
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [result, setResult] = useState<TestResults | undefined>(undefined);
 
   const handleImagePress = () => {
     setIsModalVisible(true);
@@ -42,6 +51,30 @@ export default function PatientDetails() {
   const handleCloseModal = () => {
     setIsModalVisible(false);
   };
+  const getResult = () => {
+    const rawScore = test?.result!;
+    const birthday = new Date(patient?.birthday!);
+
+    const mentalAge = getClosestMentalAge(rawScore);
+    const chronologicalAge = calculateAge(birthday, true); // Ensured valid date
+    const iq = Math.round((mentalAge / chronologicalAge) * 100);
+
+    const explanation =
+      explanations.find((e) => iq > e.min && iq <= e.max)?.exp ||
+      "No explanation available";
+
+    setResult({
+      rawScore,
+      mentalAge,
+      chronologicalAge,
+      iq,
+      explanation,
+    });
+  };
+
+  useEffect(() => {
+    getResult();
+  }, [item, patient, test]);
 
   useEffect(() => {
     const patientData = JSON.parse(item);
@@ -81,7 +114,7 @@ export default function PatientDetails() {
 
       formData.append("id", isNewTest ? new Date().toString() : test!.id);
       formData.append("patient", isNewTest ? patient.id : test!.patient);
-      formData.append("result", isNewTest ? "" : test!.result);
+      formData.append("result", isNewTest ? "" : test!.result.toString());
       formData.append("date", new Date().toString());
 
       if (!deleteImage && capturedImage) {
@@ -131,6 +164,32 @@ export default function PatientDetails() {
     }
   };
 
+  const handleDeleteResult = async () => {
+    if (!patient) return;
+
+    setLoadingDR(true);
+    const formData = new FormData();
+
+    try {
+      formData.append("id", test!.id);
+      formData.append("patient", test!.patient);
+      formData.append("result", "");
+      formData.append("date", new Date().toString());
+      formData.append("image", test?.image!);
+
+      // ✅ Now we save the test after ensuring the image is uploaded
+      const result = await handleUpdate(formData);
+      if (result) {
+        fetchTests();
+        Alert.alert("نجاح", "تم حذف النتائج بنجاح");
+      }
+    } catch (error) {
+      console.error("Error deleting test:", error);
+    } finally {
+      setLoadingDR(false);
+    }
+  };
+
   const saveImageToGallery = async (imageUrl: string) => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== "granted") {
@@ -161,7 +220,10 @@ export default function PatientDetails() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" style={{ direction: "rtl" }}>
-      <HeadPage title={`${patient?.fname} ${patient?.lname}`} />
+      <HeadPage
+        title={`${patient?.fname} ${patient?.lname}`}
+        patient={patient!}
+      />
       <ImageBackground
         source={require("@/assets/images/chat.png")}
         style={{ flex: 1 }}
@@ -169,7 +231,7 @@ export default function PatientDetails() {
       >
         <ScrollView>
           {testLoading && (
-            <View className="flex-1 justify-center items-center">
+            <View className="flex-1 justify-center items-center pt-24">
               <ActivityIndicator size={"large"} color={"#195E55"} />
             </View>
           )}
@@ -187,9 +249,35 @@ export default function PatientDetails() {
                   </Text>
                 ) : (
                   <View className="w-full gap-4">
-                    <Text className="text-2xl font-msemibold mb-2">
-                      نتائج الإختبار:
-                    </Text>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-2xl font-msemibold mb-2">
+                        نتائج الإختبار:
+                      </Text>
+                      <TouchableOpacity
+                        className="bg-red-100 p-2 rounded-full"
+                        onPress={() => {
+                          Alert.alert(
+                            "تأكيد الحذف",
+                            "هل أنت متأكد أنك تريد حذف هذه النتائج؟",
+                            [
+                              { text: "إلغاء", style: "cancel" },
+                              {
+                                text: "حذف",
+                                onPress: async () => {
+                                  await handleDeleteResult();
+                                },
+                              },
+                            ]
+                          );
+                        }}
+                      >
+                        {loadingDR ? (
+                          <ActivityIndicator color={"red"} size={"small"} />
+                        ) : (
+                          <AntDesign name="delete" size={28} color="red" />
+                        )}
+                      </TouchableOpacity>
+                    </View>
                     <View className="bg-primary-50/70">
                       {/* Raw Score */}
                       <View className="flex-row justify-between items-center p-3 rounded">
@@ -204,7 +292,7 @@ export default function PatientDetails() {
                           </Text>
                         </View>
                         <Text className="text-textColor text-xl font-msemibold w-1/2">
-                          {JSON.parse(test.result)!?.rawScore}
+                          {result!?.rawScore}
                         </Text>
                       </View>
 
@@ -221,7 +309,7 @@ export default function PatientDetails() {
                           </Text>
                         </View>
                         <Text className="text-textColor text-xl font-msemibold w-1/2">
-                          {JSON.parse(test.result)!?.mentalAge}
+                          {result!?.mentalAge}
                         </Text>
                       </View>
 
@@ -238,7 +326,7 @@ export default function PatientDetails() {
                           </Text>
                         </View>
                         <Text className="text-textColor text-xl font-msemibold w-1/2">
-                          {JSON.parse(test.result)!?.chronologicalAge} شهر
+                          {result!?.chronologicalAge} شهر
                         </Text>
                       </View>
 
@@ -255,9 +343,9 @@ export default function PatientDetails() {
                           </Text>
                         </View>
                         <Text className="text-textColor text-xl font-msemibold w-1/2">
-                          {`(${JSON.parse(test.result)!?.mentalAge} ÷ ${
-                            JSON.parse(test.result)!?.chronologicalAge
-                          }) × 100 = ${JSON.parse(test.result)!?.iq}`}
+                          {`(${result!?.mentalAge} ÷ ${
+                            result!?.chronologicalAge
+                          }) × 100 = ${result!?.iq}`}
                         </Text>
                       </View>
 
@@ -274,7 +362,7 @@ export default function PatientDetails() {
                           </Text>
                         </View>
                         <Text className="text-textColor text-xl font-msemibold w-1/2">
-                          {JSON.parse(test.result)!?.explanation}
+                          {result!?.explanation}
                         </Text>
                       </View>
                     </View>
@@ -339,7 +427,10 @@ export default function PatientDetails() {
                           }}
                         >
                           {loadingSaveImg ? (
-                            <ActivityIndicator color={"#195E55"} size={"small"} />
+                            <ActivityIndicator
+                              color={"#195E55"}
+                              size={"small"}
+                            />
                           ) : (
                             <AntDesign
                               name="download"

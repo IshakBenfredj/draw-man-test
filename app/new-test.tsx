@@ -11,9 +11,9 @@ import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { Patient, Test, TestResults } from "@/types";
 import HeadPage from "@/components/HeadPage";
-import { criteria, explanations, rawScoreToMentalAge } from "@/lib/test";
+import { criteria, explanations } from "@/lib/test";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
-import { calculateAge, handleInsert, handleUpdate } from "@/lib/utils";
+import { calculateAge, getClosestMentalAge, handleInsert, handleUpdate } from "@/lib/utils";
 import { useTests } from "@/context/TestsProvider";
 
 export default function NewTest() {
@@ -55,7 +55,7 @@ export default function NewTest() {
 
       formData.append("id", isNewTest ? new Date().toISOString() : test!.id);
       formData.append("patient", isNewTest ? patient.id : test!.patient);
-      formData.append("result", JSON.stringify(result));
+      formData.append("result", result?.rawScore.toString()!);
       formData.append("date", new Date().toISOString());
       formData.append("image", test?.image || "");
       const fetchResult = isNewTest
@@ -71,16 +71,6 @@ export default function NewTest() {
     }
   };
 
-  const getClosestMentalAge = (score: number): number => {
-    const keys = Object.keys(rawScoreToMentalAge)
-      .map(Number)
-      .sort((a, b) => a - b); // Sort keys numerically
-
-    const closestKey =
-      keys.find((key) => key >= score) ?? keys[keys.length - 1]; // Get closest higher or last element
-
-    return rawScoreToMentalAge[closestKey as keyof typeof rawScoreToMentalAge];
-  };
 
   const getResult = () => {
     const rawScore = Math.round(calculateScore());

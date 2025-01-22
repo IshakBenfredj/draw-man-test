@@ -9,7 +9,7 @@ export interface Patient {
 export interface Test {
   id: string;
   patient: string;
-  result: string;
+  result: number;
   date: Date;
   image: string;
 }

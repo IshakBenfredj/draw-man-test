@@ -26,7 +26,7 @@ export function PatientsProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const response = await fetch(get_patient_api);
-      if (!response.ok) throw new Error("تعذر جلب بيانات المرضى، يرجى المحاولة لاحقًا.");
+      if (!response.ok) return console.log("تعذر جلب بيانات المرضى، يرجى المحاولة لاحقًا.");
       const data: Patient[] = await response.json();
       setPatients(data);
     } catch (error) {
