@@ -8,3 +8,5 @@ export const add_test_api =
 export const get_test_api =
   "https://script.google.com/macros/s/AKfycbyp3J_eHrtLG2_-5UW1jn3VCk1OKaOjGIvR7o6e7gulRwDUifopcEAXgt4WuqSE53ma/exec";
 
+export const update_test_api =
+  "https://script.google.com/macros/s/AKfycbwotlG6hpIxKoLVU_bGjf8ustRPVvP--RAvYEO7oV9dr90OLkTHG3kBoaF6Ots5Fvzm/exec";

@@ -2,82 +2,160 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
   ImageBackground,
   SafeAreaView,
   TouchableOpacity,
   Image,
   ActivityIndicator,
   Alert,
+  Modal,
+  ScrollView,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { AntDesign } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import HeadPage from "@/components/HeadPage";
 import type { Patient, Test } from "@/types";
 import * as ImagePicker from "expo-image-picker";
-import { add_test_api } from "@/lib/api";
 import { useTests } from "@/context/TestsProvider";
+import { getLocalizedFullDate, handleInsert, handleUpdate } from "@/lib/utils";
+import ImageViewer from "react-native-image-zoom-viewer";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
+
+const CLOUDINARY_UPLOAD_PRESET = "ml_default"; // Replace with your Cloudinary preset
+const CLOUDINARY_CLOUD_NAME = "dbticypnb";
 
 export default function PatientDetails() {
   const { item }: { item: string } = useLocalSearchParams();
   const { tests, fetchTests, loading: testLoading } = useTests();
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingSaveImg, setLoadingSaveImg] = useState<boolean>(false);
   const [test, setTest] = useState<Test | undefined>(undefined);
   const [capturedImage, setCapturedImage] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const handleImagePress = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+  };
 
   useEffect(() => {
-    const patient = JSON.parse(item);
-    setPatient(patient);
-    const test = tests.find((t) => t.patient == patient?.id);
-    setTest(test);
-  }, [item, test]);
+    const patientData = JSON.parse(item);
+    setPatient(patientData);
+    const testData = tests.find((t) => t.patient === patientData?.id);
+    setTest(testData);
+  }, [item, tests, testLoading]);
 
   const handleCapture = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
-    if (permissionResult.granted === false) {
-      alert("You've refused to allow this app to access your camera!");
+    if (!permissionResult.granted) {
+      Alert.alert("الإذن مرفوض", "يجب منح إذن الوصول إلى الكاميرا.");
       return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      // allowsEditing: true,
       quality: 1,
       base64: true,
     });
 
-    if (!result.canceled && result.assets && result.assets[0].base64) {
-      setCapturedImage(result.assets[0].base64);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setCapturedImage(`data:image/jpg;base64,${result.assets[0].base64!}`);
+    } else {
+      console.log("No image captured");
     }
   };
 
-  const handleSave = async () => {
-    if (!patient || !capturedImage) return;
-    setLoading(true);
+  const handleSave = async (deleteImage: boolean = false) => {
+    if (!patient) return;
 
+    setLoading(true);
     const formData = new FormData();
-    formData.append("id", new Date().toString());
-    formData.append("patient", patient.id);
-    formData.append("image", capturedImage);
 
     try {
-      const response = await fetch(add_test_api, {
-        method: "POST",
-        body: formData,
-      });
+      const isNewTest = !test;
 
-      if (response.ok) {
-        Alert.alert("نجاح", "تم حفظ الصورة بنجاح");
-        setCapturedImage("");
-        fetchTests();
+      formData.append("id", isNewTest ? new Date().toString() : test!.id);
+      formData.append("patient", isNewTest ? patient.id : test!.patient);
+      formData.append("result", isNewTest ? "" : test!.result);
+      formData.append("date", new Date().toString());
+
+      if (!deleteImage && capturedImage) {
+        let apiUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+        let data = new FormData();
+        data.append("file", {
+          uri: capturedImage,
+          type: "image/jpeg",
+          name: "upload.jpg",
+        } as any);
+        data.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            body: data,
+          });
+
+          const dataImg = await response.json();
+
+          if (dataImg.secure_url) {
+            formData.append("image", dataImg.secure_url);
+          } else {
+            throw new Error("Image upload failed");
+          }
+        } catch (err) {
+          Alert.alert("فشل التحميل", "تعذر تحميل الصورة إلى Cloudinary.");
+          return;
+        }
       } else {
-        console.error("Failed to save images");
+        formData.append("image", "");
+      }
+
+      // ✅ Now we save the test after ensuring the image is uploaded
+      const result = isNewTest
+        ? await handleInsert(formData)
+        : await handleUpdate(formData);
+
+      if (result) {
+        fetchTests();
+        setCapturedImage("");
       }
     } catch (error) {
-      console.error("Error saving images:", error);
+      console.error("Error saving test:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveImageToGallery = async (imageUrl: string) => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("الإذن مرفوض", "يجب منح إذن الوصول إلى المعرض.");
+      return;
+    }
+    setLoadingSaveImg(true);
+    try {
+      // 1️⃣ Define local file path
+      const fileUri = FileSystem.documentDirectory + "downloaded_image.jpg";
+
+      // 2️⃣ Download the image from Cloudinary
+      const downloadObject = await FileSystem.downloadAsync(imageUrl, fileUri);
+      if (downloadObject.status !== 200) {
+        throw new Error("فشل تحميل الصورة");
+      }
+
+      // 3️⃣ Save downloaded image to gallery
+      await MediaLibrary.saveToLibraryAsync(downloadObject.uri);
+      Alert.alert("تم الحفظ", "تم حفظ الصورة في المعرض بنجاح.");
+    } catch (error) {
+      console.error("Error saving image to gallery:", error);
+      Alert.alert("خطأ", "تعذر حفظ الصورة في المعرض.");
+    } finally {
+      setLoadingSaveImg(false);
     }
   };
 
@@ -89,77 +167,251 @@ export default function PatientDetails() {
         style={{ flex: 1 }}
         imageStyle={{ opacity: 0.2 }}
       >
-        {/* <ScrollView className="flex-1 bg-primary-50/20"> */}
-        {
-          testLoading && <View className="flex-1"><ActivityIndicator /></View>
-        }
-        {!test && (
-          <View className="flex-1 items-center justify-center gap-4 w-[260px] mx-auto bg-primary-50/20 py-8">
-            <Text className="text-3xl font-mbold text-center">
-              لم يقم بإجتياز الإختبار بعد
-            </Text>
-            <Actions
-              onCameraPress={handleCapture}
-              hideCamera={!!capturedImage}
-            />
-            {capturedImage && (
-              <View className="w-full flex items-center justify-center gap-4">
-                <Text className="text-xl font-msemibold mb-2">
-                  الصورة الملتقطة:
-                </Text>
-                <Image
-                  source={{ uri: `data:image/jpeg;base64,${capturedImage}` }}
-                  resizeMode="contain"
-                  className="w-[228px] h-[500px] border-primary border-4 rounded-lg"
-                />
-                <TouchableOpacity
-                  className="bg-primary p-3 rounded-lg"
-                  onPress={handleSave}
-                >
-                  {loading ? (
-                    <ActivityIndicator />
-                  ) : (
-                    <Text className="text-xl font-mmedium text-white text-center">
-                      حفظ الصورة
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
-        {test && (
-          <View className="flex-1 items-center justify-center gap-4 px-4 mx-auto bg-primary-50/20 py-8">
-            {!test.result && (
-              <Text className="text-3xl font-mbold text-center">
-                لم يقم بإجتياز الإختبار بعد
-              </Text>
-            )}
-            <View className=" w-[260px]">
-              <Actions
-                onCameraPress={handleCapture}
-                hideCamera={!!test.image}
-              />
+        <ScrollView>
+          {testLoading && (
+            <View className="flex-1 justify-center items-center">
+              <ActivityIndicator size={"large"} color={"#195E55"} />
             </View>
-            {test.image && (
-              <View className="w-full flex gap-4">
-                <Text className="text-xl font-msemibold mb-2">
-                  الصورة الملتقطة:
+          )}
+          {!testLoading && (
+            <>
+              {test && (
+                <Text className="mx-auto text-center mt-4 mb-2 font-mmedium text-xl text-textColor">
+                  آخر تحديث : {getLocalizedFullDate(test.date)}
                 </Text>
-                <View className="flex-row gap-4">
-                  <Image
-                    source={{ uri: `data:image/jpeg;base64,${test.image}` }}
-                    resizeMode="contain"
-                    className="w-[228px] h-[500px] border-primary border-4 rounded-lg"
+              )}
+              <View className="flex-1 w-full px-4 items-center justify-center gap-4 mx-auto bg-primary-50/20 py-8">
+                {!test?.result ? (
+                  <Text className="text-3xl font-mbold text-center">
+                    لم يقم بإجتياز الإختبار بعد
+                  </Text>
+                ) : (
+                  <View className="w-full gap-4">
+                    <Text className="text-2xl font-msemibold mb-2">
+                      نتائج الإختبار:
+                    </Text>
+                    <View className="bg-primary-50/70">
+                      {/* Raw Score */}
+                      <View className="flex-row justify-between items-center p-3 rounded">
+                        <View className="flex-row items-center gap-2 w-1/2">
+                          <MaterialCommunityIcons
+                            name="numeric"
+                            size={24}
+                            color="#4F46E5"
+                          />
+                          <Text className="text-textColor-sec text-xl font-mmedium ml-2">
+                            الدرجة الخام :
+                          </Text>
+                        </View>
+                        <Text className="text-textColor text-xl font-msemibold w-1/2">
+                          {JSON.parse(test.result)!?.rawScore}
+                        </Text>
+                      </View>
+
+                      {/* Mental Age */}
+                      <View className="flex-row justify-between items-center p-3 rounded">
+                        <View className="flex-row items-center gap-2 w-1/2">
+                          <MaterialCommunityIcons
+                            name="brain"
+                            size={24}
+                            color="#E63946"
+                          />
+                          <Text className="text-textColor-sec text-xl font-mmedium ml-2">
+                            العمر العقلي :
+                          </Text>
+                        </View>
+                        <Text className="text-textColor text-xl font-msemibold w-1/2">
+                          {JSON.parse(test.result)!?.mentalAge}
+                        </Text>
+                      </View>
+
+                      {/* Chronological Age */}
+                      <View className="flex-row justify-between items-center p-3 rounded">
+                        <View className="flex-row items-center gap-2 w-1/2">
+                          <MaterialCommunityIcons
+                            name="calendar-clock"
+                            size={24}
+                            color="#1D3557"
+                          />
+                          <Text className="text-textColor-sec text-xl font-mmedium ml-2">
+                            العمر الزمني :
+                          </Text>
+                        </View>
+                        <Text className="text-textColor text-xl font-msemibold w-1/2">
+                          {JSON.parse(test.result)!?.chronologicalAge} شهر
+                        </Text>
+                      </View>
+
+                      {/* IQ Score */}
+                      <View className="flex-row justify-between items-center p-3 rounded">
+                        <View className="flex-row items-center gap-2 w-1/2">
+                          <MaterialCommunityIcons
+                            name="calculator"
+                            size={24}
+                            color="#F4A261"
+                          />
+                          <Text className="text-textColor-sec text-xl font-mmedium ml-2">
+                            حاصل الذكاء :
+                          </Text>
+                        </View>
+                        <Text className="text-textColor text-xl font-msemibold w-1/2">
+                          {`(${JSON.parse(test.result)!?.mentalAge} ÷ ${
+                            JSON.parse(test.result)!?.chronologicalAge
+                          }) × 100 = ${JSON.parse(test.result)!?.iq}`}
+                        </Text>
+                      </View>
+
+                      {/* Interpretation */}
+                      <View className="flex-row justify-between items-center p-3 rounded">
+                        <View className="flex-row items-center gap-2 w-1/2">
+                          <MaterialCommunityIcons
+                            name="alert-circle"
+                            size={24}
+                            color="#F77F00"
+                          />
+                          <Text className="text-textColor-sec text-xl font-mmedium ml-2">
+                            التفسير :
+                          </Text>
+                        </View>
+                        <Text className="text-textColor text-xl font-msemibold w-1/2">
+                          {JSON.parse(test.result)!?.explanation}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+                <View className=" w-[260px]">
+                  <Actions
+                    onCameraPress={handleCapture}
+                    hideCamera={!!test?.image}
+                    patient={patient!}
+                    hideBtn={!!test?.result}
                   />
-                  <View></View>
                 </View>
+                {capturedImage && !test?.image && (
+                  <View className="w-full flex items-center justify-center gap-4">
+                    <Text className="text-xl font-msemibold mb-2">
+                      الصورة الملتقطة:
+                    </Text>
+                    <Image
+                      source={{
+                        uri: capturedImage,
+                      }}
+                      resizeMode="contain"
+                      className="w-[228px] h-[500px] border-primary border-4 rounded-lg"
+                    />
+                    <TouchableOpacity
+                      className="bg-primary p-3 rounded-lg w-1/2"
+                      onPress={async () => await handleSave()}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color={"white"} />
+                      ) : (
+                        <Text className="text-xl font-mmedium text-white text-center">
+                          حفظ الصورة
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {test && test?.image && (
+                  <View className="w-full gap-4">
+                    <Text className="text-2xl font-msemibold mb-2">
+                      الصورة الملتقطة:
+                    </Text>
+                    <View className="flex-row gap-4">
+                      <TouchableOpacity onPress={handleImagePress}>
+                        <Image
+                          source={{ uri: test.image }}
+                          resizeMode="contain"
+                          className="w-[228px] h-[500px] border-primary border-4 rounded-lg"
+                        />
+                      </TouchableOpacity>
+                      <View className="gap-4 items-center">
+                        <TouchableOpacity
+                          className="bg-primary-100 p-2 rounded-full"
+                          onPress={() => {
+                            if (test?.image) {
+                              saveImageToGallery(test.image);
+                            } else {
+                              Alert.alert("خطأ", "لا توجد صورة متاحة للحفظ.");
+                            }
+                          }}
+                        >
+                          {loadingSaveImg ? (
+                            <ActivityIndicator color={"#195E55"} size={"small"} />
+                          ) : (
+                            <AntDesign
+                              name="download"
+                              size={28}
+                              color="#195E55"
+                            />
+                          )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="bg-red-100 p-2 rounded-full"
+                          onPress={() => {
+                            Alert.alert(
+                              "تأكيد الحذف",
+                              "هل أنت متأكد أنك تريد حذف هذه الصورة؟",
+                              [
+                                { text: "إلغاء", style: "cancel" },
+                                {
+                                  text: "حذف",
+                                  onPress: async () => {
+                                    await handleSave(true);
+                                  },
+                                },
+                              ]
+                            );
+                          }}
+                        >
+                          {loading ? (
+                            <ActivityIndicator color={"red"} size={"small"} />
+                          ) : (
+                            <AntDesign name="delete" size={28} color="red" />
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
-        )}
-        {/* </ScrollView> */}
+            </>
+          )}
+        </ScrollView>
       </ImageBackground>
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        onRequestClose={handleCloseModal}
+      >
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 30,
+            right: 30,
+            zIndex: 1,
+          }}
+          onPress={handleCloseModal}
+        >
+          <AntDesign name="closecircle" size={40} color="white" />
+        </TouchableOpacity>
+
+        <ImageViewer
+          imageUrls={[
+            {
+              url: test?.image!,
+              props: {
+                resizeMode: "contain",
+              },
+            },
+          ]}
+          enableSwipeDown={true}
+          onSwipeDown={handleCloseModal}
+          // renderIndicator={() => null}
+        />
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -167,23 +419,42 @@ export default function PatientDetails() {
 const Actions = ({
   onCameraPress,
   hideCamera,
+  hideBtn,
+  patient,
 }: {
   onCameraPress: () => void;
   hideCamera: boolean;
+  hideBtn: boolean;
+  patient: Patient;
 }) => {
   return (
     <View className="flex-row gap-1 items-center">
-      <TouchableOpacity className="bg-primary p-3 flex-1 rounded-lg">
-        <Text className="text-2xl font-mmedium text-white text-center">
-          إجتياز الإختبار
-        </Text>
-      </TouchableOpacity>
+      {!hideBtn && (
+        <TouchableOpacity
+          className="bg-primary p-3 flex-1 rounded-lg"
+          onPress={() =>
+            router.push({
+              pathname: "/new-test",
+              params: { item: JSON.stringify(patient) },
+            })
+          }
+        >
+          <Text className="text-2xl font-mmedium text-white text-center">
+            إجتياز الإختبار
+          </Text>
+        </TouchableOpacity>
+      )}
       {!hideCamera && (
         <TouchableOpacity
-          className="bg-primary p-3 rounded-lg"
+          className="bg-primary p-3 rounded-lg flex-row items-center gap-3"
           onPress={onCameraPress}
         >
           <AntDesign name="camera" size={27} color={"white"} />
+          {hideBtn && (
+            <Text className="text-2xl text-white font-msemibold">
+              إلتقاط صورة
+            </Text>
+          )}
         </TouchableOpacity>
       )}
     </View>

@@ -1,3 +1,6 @@
+import { Alert } from "react-native";
+import { add_test_api, update_test_api } from "./api";
+
 export const calculateAge = (birthday: Date, inMonths: boolean): number => {
   const today = new Date();
   let years = today.getFullYear() - birthday.getFullYear();
@@ -10,7 +13,11 @@ export const calculateAge = (birthday: Date, inMonths: boolean): number => {
   }
 
   if (days < 0) {
-    const daysInLastMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+    const daysInLastMonth = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      0
+    ).getDate();
     months--;
     days += daysInLastMonth;
   }
@@ -22,13 +29,12 @@ export const calculateAge = (birthday: Date, inMonths: boolean): number => {
   }
 };
 
-
 export function getLocalizedFullDate(date?: Date): string {
   var dateToFormat;
   if (date) {
-    dateToFormat = new Date(date)
+    dateToFormat = new Date(date);
   } else {
-    dateToFormat = new Date()
+    dateToFormat = new Date();
   }
 
   const dateFormat = new Intl.DateTimeFormat("ar-DZ", {
@@ -38,3 +44,47 @@ export function getLocalizedFullDate(date?: Date): string {
 
   return dateFormat;
 }
+
+export const handleInsert = async (formData: FormData) => {
+  try {
+    const response = await fetch(add_test_api, {
+      method: "POST",
+      body: formData,
+    });
+    
+    const data = await response.json();
+
+    if (data.result == "success") {
+      Alert.alert("نجاح", "تم الحفظ بنجاح");
+      return true;
+    } else {
+      Alert.alert("خطأ", "حدث خطأ ما أثناء الحفظ , الرجاء المحاولة مجددا");
+      return false;
+    }
+  } catch (error) {
+    Alert.alert("خطأ", "حدث خطأ ما أثناء الحفظ , الرجاء المحاولة مجددا");
+    return false;
+  }
+};
+
+export const handleUpdate = async (formData: FormData) => {
+  try {
+    const response = await fetch(update_test_api, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (data.result == "success") {
+      Alert.alert("نجاح", "تم الحفظ بنجاح");
+      return true;
+    } else {
+      Alert.alert("خطأ", "حدث خطأ ما أثناء الحفظ , الرجاء المحاولة مجددا");
+      return false;
+    }
+  } catch (error) {
+    Alert.alert("خطأ", "حدث خطأ ما أثناء الحفظ , الرجاء المحاولة مجددا");
+    return false;
+  }
+};

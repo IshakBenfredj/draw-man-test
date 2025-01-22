@@ -3,13 +3,21 @@ export interface Patient {
   fname: string;
   lname: string;
   birthday: Date;
-  gender: 'M' | 'F';
+  gender: "M" | "F";
 }
 
 export interface Test {
   id: string;
   patient: string;
-  result: number;
+  result: string;
   date: Date;
-  image : string
+  image: string;
+}
+
+export interface TestResults {
+  rawScore: number;
+  mentalAge: number;
+  chronologicalAge: number;
+  iq: number;
+  explanation: string;
 }

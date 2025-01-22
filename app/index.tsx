@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { Link, router } from "expo-router";
 import { AntDesign, Feather } from "@expo/vector-icons";
-import type { Patient } from "../types";
 import { StatusBar } from "expo-status-bar";
 import { calculateAge } from "@/lib/utils";
 import { usePatients } from "@/context/PatientsProvider";
