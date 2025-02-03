@@ -55,7 +55,7 @@ export const criteria = [
 export const rawScoreToMentalAge = {
   2: 42,
   3: 45,
-  4: 46,
+  4: 48,
   5: 51,
   6: 54,
   7: 57,

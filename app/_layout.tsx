@@ -35,13 +35,11 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <PatientsProvider>
       <StatusBar style="dark" />
-      <PatientsProvider>
-        <TestsProvider>
-          <Stack screenOptions={{ headerShown: false }} />;
-        </TestsProvider>
-      </PatientsProvider>
-    </>
+      <TestsProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </TestsProvider>
+    </PatientsProvider>
   );
 }
