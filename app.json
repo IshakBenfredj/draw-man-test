@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "drawing-man-test",
+    "name": "Tests Psycologiques",
     "slug": "drawing-man-test",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.ishak_benfredj.drawingmantest"
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +37,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "889d3642-09c3-4795-bb05-8b507a5592b5"
+      }
     }
   }
 }
