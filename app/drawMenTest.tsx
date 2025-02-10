@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import { AntDesign, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import HeadPage from "@/components/HeadPage";
 import type { Patient, Test, TestResults } from "@/types";
 import * as ImagePicker from "expo-image-picker";
@@ -32,7 +32,7 @@ import { explanations } from "@/lib/test";
 const CLOUDINARY_UPLOAD_PRESET = "ml_default"; // Replace with your Cloudinary preset
 const CLOUDINARY_CLOUD_NAME = "dbticypnb";
 
-export default function PatientDetails() {
+export default function drawMenTest() {
   const { item }: { item: string } = useLocalSearchParams();
   const { tests, fetchTests, loading: testLoading } = useTests();
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -102,6 +102,9 @@ export default function PatientDetails() {
       console.log("No image captured");
     }
   };
+
+  const ageInYears = calculateAge(new Date(patient?.birthday!), false);
+  const ageInMonths = calculateAge(new Date(patient?.birthday!), true);
 
   const handleSave = async (deleteImage: boolean = false) => {
     if (!patient) return;
@@ -229,6 +232,41 @@ export default function PatientDetails() {
         imageStyle={{ opacity: 0.2 }}
       >
         <ScrollView>
+        <View className="bg-primary-50/70 rounded-lg p-6 mb-6 m-4">
+          <View className="flex items-center justify-center gap-2 flex-row mb-4">
+            <FontAwesome5 name="user-circle" size={24} color="#2A9D8F" />
+            <Text className="text-3xl font-mbold text-center">
+              المعلومات الشخصية
+            </Text>
+          </View>
+          <View className="gap-2">
+            <InfoItem
+              label="الاسم"
+              value={`${patient?.fname} ${patient?.lname}`}
+              icon="user"
+            />
+            <InfoItem
+              label="تاريخ الميلاد"
+              value={getLocalizedFullDate(patient?.birthday!)}
+              icon="calendar-alt"
+            />
+            <InfoItem
+              label="الجنس"
+              value={patient?.gender === "M" ? "ذكر" : "أنثى"}
+              icon={patient?.gender === "M" ? "male" : "female"}
+            />
+            <InfoItem
+              label="العمر بالسنوات"
+              value={ageInYears.toString()}
+              icon="birthday-cake"
+            />
+            <InfoItem
+              label="العمر بالأشهر"
+              value={ageInMonths.toString()}
+              icon="calendar-check"
+            />
+          </View>
+        </View>
           {testLoading && (
             <View className="flex-1 justify-center items-center pt-24">
               <ActivityIndicator size={"large"} color={"#195E55"} />
@@ -550,3 +588,22 @@ const Actions = ({
     </View>
   );
 };
+
+
+const InfoItem = ({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+}) => (
+  <View className="flex-row justify-between items-center">
+    <View className="flex-row items-center gap-2">
+      <FontAwesome5 name={icon} size={16} color="#2A9D8F" />
+      <Text className="text-xl font-mmedium">{label}:</Text>
+    </View>
+    <Text className="text-lg font-msemibold text-primary-800">{value}</Text>
+  </View>
+);

@@ -33,14 +33,13 @@ export default function Profile() {
     );
   }
 
-  const ageInYears = calculateAge(new Date(patient.birthday), false);
-  const ageInMonths = calculateAge(new Date(patient.birthday), true);
+
 
   return (
     <SafeAreaView className="flex-1 bg-white" style={{ direction: "rtl" }}>
       <HeadPage title={`${patient.fname} ${patient.lname}`} patient={patient} />
       <ScrollView className="flex-1 p-4">
-        <View className="bg-primary-50/70 rounded-lg p-6 mb-6">
+        {/* <View className="bg-primary-50/70 rounded-lg p-6 mb-6">
           <View className="flex items-center justify-center gap-2 flex-row mb-4">
             <FontAwesome5 name="user-circle" size={24} color="#2A9D8F" />
             <Text className="text-3xl font-mbold text-center">
@@ -74,7 +73,7 @@ export default function Profile() {
               icon="calendar-check"
             />
           </View>
-        </View>
+        </View> */}
 
         <View className="flex items-center justify-center gap-2 flex-row mb-4">
           <MaterialCommunityIcons
@@ -107,23 +106,6 @@ export default function Profile() {
   );
 }
 
-const InfoItem = ({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: string;
-}) => (
-  <View className="flex-row justify-between items-center">
-    <View className="flex-row items-center gap-2">
-      <FontAwesome5 name={icon} size={16} color="#2A9D8F" />
-      <Text className="text-xl font-mmedium">{label}:</Text>
-    </View>
-    <Text className="text-lg font-msemibold text-primary-800">{value}</Text>
-  </View>
-);
 
 const TestButton = ({
   title,
