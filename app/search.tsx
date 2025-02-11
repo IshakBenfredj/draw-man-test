@@ -9,11 +9,11 @@ import {
   Image,
 } from "react-native";
 import { Feather, FontAwesome6 } from "@expo/vector-icons";
-import HeadPage from "@/components/HeadPage";
-import { usePatients } from "@/context/PatientsProvider";
+import HeadPage from "../components/HeadPage";
+import { usePatients } from "../context/PatientsProvider";
 import { router } from "expo-router";
-import { calculateAge } from "@/lib/utils";
-import { useTests } from "@/context/TestsProvider";
+import { calculateAge } from "../lib/utils";
+import { useTests } from "../context/TestsProvider";
 
 export default function Search() {
   const { patients } = usePatients();
@@ -50,7 +50,7 @@ export default function Search() {
       {!searchQuery && (
         <View className="px-4 flex items-center mt-10">
           <Image
-            source={require("@/assets/images/no-data.png")}
+            source={require("../assets/images/no-data.png")}
             className="w-2/3 mx-auto"
             resizeMode="contain"
           />
@@ -102,7 +102,7 @@ export default function Search() {
           ListEmptyComponent={() => (
             <View className="px-4 flex items-center mt-10">
               <Image
-                source={require("@/assets/images/no-data.png")}
+                source={require("../assets/images/no-data.png")}
                 className="w-2/3 mx-auto"
                 resizeMode="contain"
               />

@@ -12,10 +12,10 @@ import { router } from "expo-router";
 import type { Patient } from "../types";
 import { AntDesign } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import HeadPage from "@/components/HeadPage";
-import { usePatients } from "@/context/PatientsProvider";
-import { add_patient_api } from "@/lib/api";
-import { calculateAge } from "@/lib/utils";
+import HeadPage from "../components/HeadPage";
+import { usePatients } from "../context/PatientsProvider";
+import { add_patient_api } from "../lib/api";
+import { calculateAge } from "../lib/utils";
 
 export default function NewPatient() {
   const [patient, setPatient] = useState<Partial<Patient>>({

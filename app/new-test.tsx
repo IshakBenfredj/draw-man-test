@@ -9,12 +9,12 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { Patient, Test, TestResults } from "@/types";
-import HeadPage from "@/components/HeadPage";
-import { criteria, explanations } from "@/lib/test";
+import { Patient, Test, TestResults } from "../types";
+import HeadPage from "../components/HeadPage";
+import { criteria, explanations } from "../lib/test";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
-import { calculateAge, getClosestMentalAge, handleInsert, handleUpdate } from "@/lib/utils";
-import { useTests } from "@/context/TestsProvider";
+import { calculateAge, getClosestMentalAge, handleInsert, handleUpdate } from "../lib/utils";
+import { useTests } from "../context/TestsProvider";
 
 export default function NewTest() {
   const { item }: { item: string } = useLocalSearchParams();

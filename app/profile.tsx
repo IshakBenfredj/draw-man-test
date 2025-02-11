@@ -7,10 +7,9 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import HeadPage from "@/components/HeadPage";
-import type { Patient } from "@/types";
-import { calculateAge, getLocalizedFullDate } from "@/lib/utils";
-import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
+import HeadPage from "../components/HeadPage";
+import type { Patient } from "../types";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function Profile() {
   const router = useRouter();
@@ -114,7 +113,7 @@ const TestButton = ({
   enabled,
 }: {
   title: string;
-  icon: string;
+  icon: "draw" | "chart-bar" | "chart-line" | "clipboard-list";
   onPress?: () => void;
   enabled: boolean;
 }) => (

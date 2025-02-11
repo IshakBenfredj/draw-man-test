@@ -11,10 +11,10 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import type { Patient } from "../types";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import HeadPage from "@/components/HeadPage";
-import { usePatients } from "@/context/PatientsProvider";
-import { update_patient_api } from "@/lib/api";
-import { calculateAge } from "@/lib/utils";
+import HeadPage from "../components/HeadPage";
+import { usePatients } from "../context/PatientsProvider";
+import { update_patient_api } from "../lib/api";
+import { calculateAge } from "../lib/utils";
 
 export default function EditPatient() {
   const { item }: { item: string } = useLocalSearchParams();

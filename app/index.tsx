@@ -12,9 +12,9 @@ import {
 import { Link, router } from "expo-router";
 import { AntDesign, Feather, FontAwesome6 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { calculateAge } from "@/lib/utils";
-import { usePatients } from "@/context/PatientsProvider";
-import { useTests } from "@/context/TestsProvider";
+import { calculateAge } from "../lib/utils";
+import { usePatients } from "../context/PatientsProvider";
+import { useTests } from "../context/TestsProvider";
 
 export default function PatientList() {
   const { patients, loading, fetchPatients } = usePatients();
@@ -95,7 +95,7 @@ export default function PatientList() {
             !loading && patients.length === 0 ? (
               <View className="px-4 flex items-center">
                 <Image
-                  source={require("@/assets/images/no-data.png")}
+                  source={require("../assets/images/no-data.png")}
                   className="w-2/3 mx-auto"
                   resizeMode="contain"
                 />

@@ -1,4 +1,4 @@
-import { Patient } from "@/types";
+import { Patient } from "../types";
 import React, {
   createContext,
   useContext,
@@ -6,7 +6,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { get_patient_api } from "@/lib/api";
+import { get_patient_api } from "../lib/api";
 
 interface PatientsContextType {
   patients: Patient[];

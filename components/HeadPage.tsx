@@ -8,9 +8,9 @@ import {
 import React, { useState } from "react";
 import { router } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
-import { delete_patient_api } from "@/lib/api";
-import { usePatients } from "@/context/PatientsProvider";
-import { Patient } from "@/types";
+import { delete_patient_api } from "../lib/api";
+import { usePatients } from "../context/PatientsProvider";
+import { Patient } from "../types";
 
 export default function HeadPage({
   title,

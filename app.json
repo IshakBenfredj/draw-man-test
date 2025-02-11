@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Tests Psycologiques",
-    "slug": "drawing-man-test",
+    "slug": "tests-psycologiques",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -43,7 +43,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "889d3642-09c3-4795-bb05-8b507a5592b5"
+        "projectId": "d7e86a31-5af9-4866-a731-d561d7d3a9a9"
       }
     }
   }

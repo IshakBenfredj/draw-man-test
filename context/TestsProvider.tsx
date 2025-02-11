@@ -1,5 +1,5 @@
-import { get_test_api } from '@/lib/api';
-import { Test } from '@/types';
+import { get_test_api } from '../lib/api';
+import { Test } from '../types';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface TestsContextType {

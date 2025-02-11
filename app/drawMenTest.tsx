@@ -13,21 +13,21 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { AntDesign, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
-import HeadPage from "@/components/HeadPage";
-import type { Patient, Test, TestResults } from "@/types";
+import HeadPage from "../components/HeadPage";
+import type { Patient, Test, TestResults } from "../types";
 import * as ImagePicker from "expo-image-picker";
-import { useTests } from "@/context/TestsProvider";
+import { useTests } from "../context/TestsProvider";
 import {
   calculateAge,
   getClosestMentalAge,
   getLocalizedFullDate,
   handleInsert,
   handleUpdate,
-} from "@/lib/utils";
+} from "../lib/utils";
 import ImageViewer from "react-native-image-zoom-viewer";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
-import { explanations } from "@/lib/test";
+import { explanations } from "../lib/test";
 
 const CLOUDINARY_UPLOAD_PRESET = "ml_default"; // Replace with your Cloudinary preset
 const CLOUDINARY_CLOUD_NAME = "dbticypnb";
@@ -227,7 +227,7 @@ export default function drawMenTest() {
         title={`إختبار رسم الرجل`}
       />
       <ImageBackground
-        source={require("@/assets/images/chat.png")}
+        source={require("../assets/images/chat.png")}
         style={{ flex: 1 }}
         imageStyle={{ opacity: 0.2 }}
       >
